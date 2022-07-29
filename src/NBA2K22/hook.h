@@ -89,15 +89,33 @@ namespace NBA2K22
         {
             Data *DataArray = *(Data **)(*(DWORD64 *)a1 + (i * 8));
 
-            // if (DataArray->Key == 0xc4886abd)
-            // {
-            //     DataArray->Value = 0xffffffff;
-            // }
+            if (DataArray->Key == 0xc4886abd)
+            {
+                DataArray->Value = 0xffffffff;
+            }
 
-            // if (DataArray->Key == 0xfca5f7d2)
+            if (DataArray->Key == 0xfca5f7d2)
+            {
+                DataArray->Value = 0;
+            }
+
+            // 云存档ID (CloudSaveId)
+            // if (DataArray->Key == 0xc9038206)
             // {
             //     DataArray->Value = 0;
             // }
+
+            // CAREER_GAMES_PLAYED_ON_STICKS_0
+            if (DataArray->Key == 0xcd01b14a)
+            {
+                DataArray->Value = 0;
+            }
+
+            // CAREER_GAMES_PLAYED_ON_STICKS_1
+            if (DataArray->Key == 0xba0681dc)
+            {
+                DataArray->Value = 0;
+            }
 
             printf("[%04d]  Key:%08x  Type:%02x  Size:%02x  Value:%016llx", i, DataArray->Key, DataArray->Type, DataArray->Size, DataArray->Value);
 
@@ -131,7 +149,7 @@ namespace NBA2K22
 
     void Hook()
     {
-        *present = MyPresent;
+        // *present = MyPresent;
 
 #ifdef _DEBUG
         DWORD OldProtect = 0;
@@ -149,8 +167,8 @@ namespace NBA2K22
 
     void UnHook()
     {
-        *present = originalPresent;
-        Sleep(100);
+        // *present = originalPresent;
+        // Sleep(100);
 
 #ifdef _DEBUG
         DWORD OldProtect = 0;

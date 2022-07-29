@@ -15,6 +15,9 @@ namespace NBA2K22
 
     int *ArraySize = (int *)(NBA2K22 + 0x6498E08);
 
+    // 云存档Id
+    DWORD64 *CloudSaveId = (DWORD64 *)(NBA2K22 + 0x55301F0);
+
     DWORD64 GetX()
     {
         // [[6A1DA18]+20]+60

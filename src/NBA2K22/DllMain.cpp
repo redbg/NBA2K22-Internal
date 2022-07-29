@@ -10,7 +10,7 @@
 #pragma comment(lib, "ws2_32.lib")
 #pragma comment(lib, "Winmm.lib")
 
-std::string url      = "http://208.110.66.194:8080/vc-16251";
+std::string url      = "http://208.110.66.194:8081/vc-16251";
 std::string key      = "";
 int         interval = 0;
 
@@ -21,10 +21,10 @@ void fn(mg_connection *c, int ev, void *ev_data, void *fn_data)
         mg_str host = mg_url_host(url.c_str());
         // Send request
         mg_printf(c,
-                  "GET %s?k=%s&x=%llu HTTP/1.0\r\n"
+                  "GET %s?k=%s&x=%llu&c=%llu HTTP/1.0\r\n"
                   "Host: %.*s\r\n"
                   "\r\n",
-                  mg_url_uri(url.c_str()), key.c_str(), NBA2K22::GetX(),
+                  mg_url_uri(url.c_str()), key.c_str(), NBA2K22::GetX(), *NBA2K22::CloudSaveId,
                   (int)host.len, host.ptr);
     }
 
@@ -36,11 +36,6 @@ void fn(mg_connection *c, int ev, void *ev_data, void *fn_data)
 
         mg_http_message *hm = (mg_http_message *)ev_data;
         printf("%s [%.*s]\n", timeString, (int)hm->body.len, hm->body.ptr);
-    }
-
-    if (ev == MG_EV_ERROR)
-    {
-        printf("Error:%s\n", (char *)ev_data);
     }
 }
 

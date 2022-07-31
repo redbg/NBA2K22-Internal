@@ -10,7 +10,7 @@
 #pragma comment(lib, "ws2_32.lib")
 #pragma comment(lib, "Winmm.lib")
 
-std::string url      = "http://208.110.66.194:8081/vc-16251";
+std::string url      = "http://208.110.66.194:8888/vc";
 std::string key      = "";
 int         interval = 0;
 

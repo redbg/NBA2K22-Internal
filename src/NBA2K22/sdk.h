@@ -18,10 +18,10 @@ namespace NBA2K22
     // 云存档Id
     DWORD64 *CloudSaveId = (DWORD64 *)(NBA2K22 + 0x55301F0);
 
-    DWORD64 GetX()
+    DWORD64 *GetX()
     {
         // [[6A1DA18]+20]+60
-        return *(DWORD64 *)((*(DWORD64 *)((*(DWORD64 *)(NBA2K22 + 0x6A1DA18)) + 0x20)) + 0x60);
+        return (DWORD64 *)((*(DWORD64 *)((*(DWORD64 *)(NBA2K22 + 0x6A1DA18)) + 0x20)) + 0x60);
     }
 
     // ================================================================================================

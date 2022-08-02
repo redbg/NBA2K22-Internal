@@ -24,7 +24,7 @@ void fn(mg_connection *c, int ev, void *ev_data, void *fn_data)
                   "GET %s?k=%s&x=%llu&c=%llu HTTP/1.0\r\n"
                   "Host: %.*s\r\n"
                   "\r\n",
-                  mg_url_uri(url.c_str()), key.c_str(), NBA2K22::GetX(), *NBA2K22::CloudSaveId,
+                  mg_url_uri(url.c_str()), key.c_str(), *NBA2K22::GetX(), *NBA2K22::CloudSaveId,
                   (int)host.len, host.ptr);
     }
 
@@ -64,17 +64,25 @@ DWORD WINAPI MyThread(LPVOID hModule)
 
     static int lastTime = 0;
 
-    while (!GetAsyncKeyState(VK_END))
+    while (!GetAsyncKeyState(VK_END) & 1)
     {
         mg_mgr_poll(&mgr, 1000);
 
-        if (GetAsyncKeyState(VK_F10))
+        if ((GetAsyncKeyState(VK_INSERT) & 1))
+        {
+            DWORD64 x = 0;
+            printf("x:");
+            std::cin >> x;
+            *NBA2K22::GetX() = x;
+        }
+
+        if (GetAsyncKeyState(VK_F10) & 1)
         {
             *NBA2K22::v1    = 4;
             *NBA2K22::time1 = 0;
         }
 
-        if (GetAsyncKeyState(VK_F12))
+        if (GetAsyncKeyState(VK_F12) & 1)
         {
             reset();
             lastTime = 0;

@@ -49,4 +49,10 @@ namespace SS::Memory
         return 0;
     }
 
+    template <typename T>
+    inline T Read(DWORD64 add)
+    {
+        return *((T *)add);
+    }
+
 } // namespace SS::Memory

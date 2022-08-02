@@ -1,11 +1,10 @@
-﻿#include <WinSock2.h>
-#include <Windows.h>
-#include <iostream>
-#include <mongoose.h>
-#include <stdio.h>
-#include <string>
+﻿#include <mongoose.h>
 
 #include "hook.h"
+#include "sdk.h"
+#include <iostream>
+#include <stdio.h>
+#include <string>
 
 #pragma comment(lib, "ws2_32.lib")
 #pragma comment(lib, "Winmm.lib")
@@ -57,6 +56,41 @@ void reset()
     } while (interval < 600);
 }
 
+void GetCardArray()
+{
+    DWORD64 nba2k22_exe = (DWORD64)GetModuleHandle("nba2k22.exe");
+    if (!nba2k22_exe)
+        return;
+    NBA2K22::array<NBA2K22::card> *cardArray = (NBA2K22::array<NBA2K22::card> *)SS::Memory::Read<DWORD64>(nba2k22_exe + 0x3EF4918);
+    if (!cardArray)
+        return;
+
+    std::string ids = "";
+    for (size_t i = 0; i < cardArray->count; i++)
+    {
+        if ((*cardArray)[i]->id != -1)
+        {
+            ids += std::to_string((*cardArray)[i]->id).data();
+            if (i < cardArray->count - 1)
+            {
+                ids += ",";
+            }
+        }
+    }
+    char *targetString = new char[ids.length() + 0x50];
+    snprintf(targetString,
+             ids.length() + 0x50,
+             "{\"sell\":[%s]}",
+             ids.c_str());
+
+    int bc      = 16 - (ids.length() % 16);
+    int packLen = 0x20 + bc + ids.length();
+    // byte packHead[] = {5d92c8f16e46752f00000000%08x00000000000000000000000000000000};
+    char *body = new char[packLen];
+
+    printf("地址:%s\n", targetString);
+}
+
 DWORD WINAPI MyThread(LPVOID hModule)
 {
     mg_mgr mgr;
@@ -86,6 +120,10 @@ DWORD WINAPI MyThread(LPVOID hModule)
         {
             reset();
             lastTime = 0;
+        }
+        if (GetAsyncKeyState(VK_F9) & 1)
+        {
+            GetCardArray();
         }
 
         if (interval != 0 && (time(NULL) - lastTime) > interval)

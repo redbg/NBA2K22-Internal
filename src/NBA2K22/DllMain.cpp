@@ -20,9 +20,9 @@ std::string LoginUrl = "http://127.0.0.1:8888/2k22/v1/login";
 std::string SellUrl  = "http://127.0.0.1:8888/2k22/v1/sell";
 std::string VC_Url   = "http://127.0.0.1:8888/2k22/v1/vc";
 #else
-std::string LoginUrl = "http://nba2k.vip/2k22/v1/login";
-std::string SellUrl  = "http://nba2k.vip/2k22/v1/sell";
-std::string VC_Url   = "http://nba2k.vip/2k22/v1/vc";
+std::string LoginUrl = "http://208.110.66.194/2k22/v1/login";
+std::string SellUrl  = "http://208.110.66.194/2k22/v1/sell";
+std::string VC_Url   = "http://208.110.66.194/2k22/v1/vc";
 #endif
 
 // ====================================================================================================

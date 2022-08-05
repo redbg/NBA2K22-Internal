@@ -2,6 +2,7 @@
 
 #include "hook.h"
 #include "sdk.h"
+#include <format>
 #include <iostream>
 #include <stdio.h>
 #include <string>
@@ -9,87 +10,153 @@
 #pragma comment(lib, "ws2_32.lib")
 #pragma comment(lib, "Winmm.lib")
 
-std::string url      = "http://208.110.66.194:8888/vc";
-std::string key      = "";
-int         interval = 0;
+std::string g_Key         = "";
+int         g_Point       = 0;
+int         g_Interval    = 0;
+const int   g_MinInterval = 1000;
 
-void fn(mg_connection *c, int ev, void *ev_data, void *fn_data)
+#ifdef _DEBUG
+std::string LoginUrl = "http://127.0.0.1:8888/2k22/v1/login";
+std::string SellUrl  = "http://127.0.0.1:8888/2k22/v1/sell";
+std::string VC_Url   = "http://127.0.0.1:8888/2k22/v1/vc";
+#else
+std::string LoginUrl = "http://nba2k.vip/2k22/v1/login";
+std::string SellUrl  = "http://nba2k.vip/2k22/v1/sell";
+std::string VC_Url   = "http://nba2k.vip/2k22/v1/vc";
+#endif
+
+// ====================================================================================================
+
+void HttpMsg(mg_http_message *hm)
+{
+    time_t now = time(NULL);
+    char   timeString[32];
+    strftime(timeString, sizeof(timeString), "%Y/%m/%d %H:%M:%S", localtime(&now));
+
+    for (int i = 0; i < MG_MAX_HTTP_HEADERS && hm->headers[i].name.len > 0; i++)
+    {
+        mg_str *k = &hm->headers[i].name;
+        mg_str *v = &hm->headers[i].value;
+
+        if (std::string(k->ptr, k->len) == "Point")
+        {
+            g_Point = std::stoi(std::string(v->ptr, v->len));
+        }
+
+        // printf("%.*s -> %.*s\n", (int)k->len, k->ptr, (int)v->len, v->ptr);
+    }
+
+    printf("%s | %.*s\n", timeString, (int)hm->body.len, hm->body.ptr);
+}
+
+// ====================================================================================================
+
+void login(mg_connection *c, int ev, void *ev_data, void *fn_data)
 {
     if (ev == MG_EV_CONNECT)
     {
-        mg_str host = mg_url_host(url.c_str());
+        mg_str host = mg_url_host(LoginUrl.c_str());
         // Send request
+
         mg_printf(c,
-                  "GET %s?k=%s&x=%llu&c=%llu HTTP/1.0\r\n"
+                  "GET %s?k=%s&x=%llu&SteamUser=%s HTTP/1.0\r\n"
                   "Host: %.*s\r\n"
                   "\r\n",
-                  mg_url_uri(url.c_str()), key.c_str(), *NBA2K22::GetX(), *NBA2K22::CloudSaveId,
+                  mg_url_uri(LoginUrl.c_str()),
+                  g_Key.c_str(), *NBA2K22::GetX(), getenv("SteamUser"),
                   (int)host.len, host.ptr);
     }
 
     if (ev == MG_EV_HTTP_MSG)
     {
-        time_t now = time(NULL);
-        char   timeString[32];
-        strftime(timeString, sizeof(timeString), "%Y-%m-%d %H:%M:%S", localtime(&now));
-
-        mg_http_message *hm = (mg_http_message *)ev_data;
-        printf("%s [%.*s]\n", timeString, (int)hm->body.len, hm->body.ptr);
+        HttpMsg((mg_http_message *)ev_data);
     }
 }
 
-void reset()
+// ====================================================================================================
+
+void vc(mg_connection *c, int ev, void *ev_data, void *fn_data)
 {
-    printf("key:");
-    std::cin >> key;
-
-    do
+    if (ev == MG_EV_CONNECT)
     {
-        printf("interval(second):");
-        std::cin >> interval;
+        mg_str host = mg_url_host(VC_Url.c_str());
+        // Send request
+        mg_printf(c,
+                  "GET %s?k=%s&x=%llu&SteamUser=%s&c=%llu HTTP/1.0\r\n"
+                  "Host: %.*s\r\n"
+                  "\r\n",
+                  mg_url_uri(VC_Url.c_str()),
+                  g_Key.c_str(), *NBA2K22::GetX(), getenv("SteamUser"), *NBA2K22::CloudSaveId,
+                  (int)host.len, host.ptr);
+    }
 
-        if (interval < 600)
-        {
-            printf("Error: The minimum interval is 600\n");
-        }
-
-    } while (interval < 600);
+    if (ev == MG_EV_HTTP_MSG)
+    {
+        HttpMsg((mg_http_message *)ev_data);
+    }
 }
 
-void GetCardArray()
-{
-    DWORD64 nba2k22_exe = (DWORD64)GetModuleHandle("nba2k22.exe");
-    if (!nba2k22_exe)
-        return;
-    NBA2K22::array<NBA2K22::card> *cardArray = (NBA2K22::array<NBA2K22::card> *)SS::Memory::Read<DWORD64>(nba2k22_exe + 0x3EF4918);
-    if (!cardArray)
-        return;
+// ====================================================================================================
 
-    std::string ids = "";
+void sell(mg_connection *c, int ev, void *ev_data, void *fn_data)
+{
+    if (ev == MG_EV_CONNECT)
+    {
+        mg_str host = mg_url_host(SellUrl.c_str());
+        // Send request
+        mg_printf(c,
+                  "GET %s?k=%s&x=%llu&SteamUser=%s&sell=%s HTTP/1.0\r\n"
+                  "Host: %.*s\r\n"
+                  "\r\n",
+                  mg_url_uri(SellUrl.c_str()),
+                  g_Key.c_str(), *NBA2K22::GetX(), getenv("SteamUser"), (char *)fn_data,
+                  (int)host.len, host.ptr);
+    }
+
+    if (ev == MG_EV_HTTP_MSG)
+    {
+        HttpMsg((mg_http_message *)ev_data);
+    }
+}
+
+// ====================================================================================================
+
+std::string GetCardSellString()
+{
+    NBA2K22::array<NBA2K22::card> *cardArray = (NBA2K22::array<NBA2K22::card> *)SS::Memory::Read<DWORD64>(NBA2K22::NBA2K22 + 0x3EF4918);
+    if (!cardArray)
+        return "";
+
+    std::string id_array = "";
     for (size_t i = 0; i < cardArray->count; i++)
     {
         if ((*cardArray)[i]->id != -1)
         {
-            ids += std::to_string((*cardArray)[i]->id).data();
-            if (i < cardArray->count - 1)
+            for (size_t j = 0; j < (*cardArray)[i]->number; j++)
             {
-                ids += ",";
+                id_array += std::to_string((*cardArray)[i]->id);
+                id_array += ",";
             }
         }
     }
-    char *targetString = new char[ids.length() + 0x50];
-    snprintf(targetString,
-             ids.length() + 0x50,
-             "{\"sell\":[%s]}",
-             ids.c_str());
 
-    int bc      = 16 - (ids.length() % 16);
-    int packLen = 0x20 + bc + ids.length();
-    // byte packHead[] = {5d92c8f16e46752f00000000%08x00000000000000000000000000000000};
-    char *body = new char[packLen];
+    if (id_array.empty())
+    {
+        return "";
+    }
+    else
+    {
+        id_array.pop_back();
+    }
 
-    printf("地址:%s\n", targetString);
+#ifdef _DEBUG
+    std::cout << id_array << "\n";
+#endif
+
+    return id_array;
 }
+
+// ====================================================================================================
 
 DWORD WINAPI MyThread(LPVOID hModule)
 {
@@ -100,39 +167,75 @@ DWORD WINAPI MyThread(LPVOID hModule)
 
     while (!GetAsyncKeyState(VK_END) & 1)
     {
-        mg_mgr_poll(&mgr, 1000);
+        mg_mgr_poll(&mgr, 100);
 
-        if ((GetAsyncKeyState(VK_INSERT) & 1))
+        // 清除控制台
+        if (GetAsyncKeyState(VK_DELETE) & 1)
         {
-            DWORD64 x = 0;
-            printf("x:");
-            std::cin >> x;
-            *NBA2K22::GetX() = x;
+            system("cls");
         }
 
-        if (GetAsyncKeyState(VK_F10) & 1)
+        // 一键结束比赛
+        if (GetAsyncKeyState(VK_F5) & 1)
         {
             *NBA2K22::v1    = 4;
             *NBA2K22::time1 = 0;
         }
 
-        if (GetAsyncKeyState(VK_F12) & 1)
+        // 开始卖收藏
+        if ((GetAsyncKeyState(VK_F8) & 1) && g_Point > 0)
         {
-            reset();
-            lastTime = 0;
-        }
-        if (GetAsyncKeyState(VK_F9) & 1)
-        {
-            GetCardArray();
+            static std::string sellString;
+            sellString = GetCardSellString();
+            if (!sellString.empty())
+            {
+                mg_http_connect(&mgr, SellUrl.c_str(), sell, sellString.data());
+            }
         }
 
-        if (interval != 0 && (time(NULL) - lastTime) > interval)
+        // 开始刷VC
+        if ((GetAsyncKeyState(VK_F10) & 1) && g_Point > 0)
         {
-            mg_http_connect(&mgr, url.c_str(), fn, NULL);
+            printf("interval(second):");
+            std::cin >> g_Interval;
+
+            if (g_Interval == 0)
+            {
+                printf("[Stop]\n");
+            }
+            else if (g_Interval >= g_MinInterval)
+            {
+                printf("[Start] Interval:%d\n", g_Interval);
+            }
+            else
+            {
+                printf("[Start] Error: The minimum interval is %d\n", g_MinInterval);
+            }
+        }
+
+        // 登录
+        if (GetAsyncKeyState(VK_F12) & 1)
+        {
+            printf("Key:");
+            std::cin >> g_Key;
+            mg_http_connect(&mgr, LoginUrl.c_str(), login, NULL);
+        }
+
+        // 修改 x
+        if (GetAsyncKeyState(VK_CONTROL) && (GetAsyncKeyState(VK_INSERT) & 1))
+        {
+            printf("x:");
+            std::cin >> *NBA2K22::GetX();
+        }
+
+        // 定时刷VC
+        if (g_Interval >= g_MinInterval && (time(NULL) - lastTime) > g_Interval)
+        {
+            mg_http_connect(&mgr, VC_Url.c_str(), vc, NULL);
             lastTime = time(NULL);
         }
 
-        Sleep(100);
+        Sleep(10);
     }
 
     // mg_mgr_free(&mgr);
@@ -151,7 +254,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD dwReason, LPVOID)
         freopen_s(&file, "CONIN$", "r", stdin);
         freopen_s(&file, "CONOUT$", "w", stdout);
         freopen_s(&file, "CONOUT$", "w", stderr);
-        printf("[Start]\n");
+        printf("[Begin]\n");
 
         NBA2K22::Hook();
         CreateThread(0, 0, MyThread, (HMODULE)hModule, 0, 0);

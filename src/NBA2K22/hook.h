@@ -147,13 +147,37 @@ namespace NBA2K22
         return originalSendPacket(a1, a2, a3);
     }
 
+    // Hook 跳过动画
+    void EnableSkipOpenCard()
+    {
+        DWORD         OldProtect = 0;
+        unsigned char newbyte[]  = {0xE9, 0xD6, 0x06, 0x00, 0x00, 0x90};
+        LPVOID        address    = (LPVOID)(NBA2K22 + 0x15A43D1);
+        VirtualProtect(address, sizeof(newbyte), PAGE_EXECUTE_READWRITE, &OldProtect);
+        memcpy(address, newbyte, sizeof(newbyte));
+        VirtualProtect(address, sizeof(newbyte), OldProtect, &OldProtect);
+    }
+
+    // UnHook 跳过动画
+    void DisableSkipOpenCard()
+    {
+        DWORD         OldProtect = 0;
+        unsigned char newbyte[]  = {0x0F, 0x8D, 0xD5, 0x06, 0x00, 0x00};
+        LPVOID        address    = (LPVOID)(NBA2K22 + 0x15A43D1);
+        VirtualProtect(address, sizeof(newbyte), PAGE_EXECUTE_READWRITE, &OldProtect);
+        memcpy(address, newbyte, sizeof(newbyte));
+        VirtualProtect(address, sizeof(newbyte), OldProtect, &OldProtect);
+    }
+
     void Hook()
     {
         // *present = MyPresent;
 
-        DWORD OldProtect = 0;
+        EnableSkipOpenCard();
 
 #ifdef _DEBUG
+
+        DWORD OldProtect = 0;
         VirtualProtect((SendPacket_t *)((DWORD64)sendPacket + 0x68), 8, PAGE_EXECUTE_READWRITE, &OldProtect);
         *(SendPacket_t *)((DWORD64)sendPacket + 0x68) = MySendPacket;
         VirtualProtect((SendPacket_t *)((DWORD64)sendPacket + 0x68), 8, OldProtect, &OldProtect);
@@ -164,13 +188,6 @@ namespace NBA2K22
             MH_EnableHook(CRC32);
         }
 #endif
-
-        // Hook 跳过动画
-        unsigned char newbyte[] = {0xE9, 0xD6, 0x06, 0x00, 0x00, 0x90};
-        LPVOID        address   = (LPVOID)(NBA2K22 + 0x15A43D1);
-        VirtualProtect(address, sizeof(newbyte), PAGE_EXECUTE_READWRITE, &OldProtect);
-        memcpy(address, newbyte, sizeof(newbyte));
-        VirtualProtect(address, sizeof(newbyte), OldProtect, &OldProtect);
     }
 
     void UnHook()
@@ -178,21 +195,16 @@ namespace NBA2K22
         // *present = originalPresent;
         // Sleep(100);
 
-        DWORD OldProtect = 0;
+        DisableSkipOpenCard();
 
 #ifdef _DEBUG
+
+        DWORD OldProtect = 0;
         VirtualProtect((SendPacket_t *)((DWORD64)sendPacket + 0x68), 8, PAGE_EXECUTE_READWRITE, &OldProtect);
         *(SendPacket_t *)((DWORD64)sendPacket + 0x68) = originalSendPacket;
         VirtualProtect((SendPacket_t *)((DWORD64)sendPacket + 0x68), 8, OldProtect, &OldProtect);
 
         MH_Uninitialize();
 #endif
-
-        // UnHook 跳过动画
-        unsigned char newbyte[] = {0x0F, 0x8D, 0xD5, 0x06, 0x00, 0x00};
-        LPVOID        address   = (LPVOID)(NBA2K22 + 0x15A43D1);
-        VirtualProtect(address, sizeof(newbyte), PAGE_EXECUTE_READWRITE, &OldProtect);
-        memcpy(address, newbyte, sizeof(newbyte));
-        VirtualProtect(address, sizeof(newbyte), OldProtect, &OldProtect);
     }
 } // namespace NBA2K22

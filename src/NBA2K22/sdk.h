@@ -41,6 +41,15 @@ namespace NBA2K22
         DWORD64 Value;
     };
 
+    auto GetString = (char *(*)(DWORD64 data, DWORD64 key, DWORD64 r8))(NBA2K22 + 0x1E703C0); //搜字符串 GetString8
+    auto GetData   = (Data * (*)(DWORD64 data, DWORD64 key, DWORD64 r8))(NBA2K22 + 0x1E6FB20);
+
+    Insert_t       Insert_6 = (Insert_t)(NBA2K22 + 0x1E74630);
+    Insert_t       Insert_C = (Insert_t)(NBA2K22 + 0x1E72280);
+    Insert_Float_t Insert_D = (Insert_Float_t)(NBA2K22 + 0x1E72DD0);
+
+    // ================================================================================================
+
     template <typename T>
     class array
     {
@@ -55,20 +64,10 @@ namespace NBA2K22
         }
     };
 
-    struct SName
+    struct FullName
     {
-        union
-        {
-            struct
-            {
-                wchar_t name[0x14]; //名
-            };
-            struct
-            {
-                char    u[0x28];
-                wchar_t surname[0x14]; //姓
-            };
-        };
+        wchar_t name[0x14];    //名
+        wchar_t surname[0x14]; //姓
     };
 
     class card
@@ -76,30 +75,30 @@ namespace NBA2K22
     public:
         union
         {
-            struct
+            struct VTable
             {
-                virtual void v0(void);
-                virtual void v8(void);
-                virtual void v10(void);
-                virtual void v18(void);
-                virtual void v20(void);
-                virtual void v28(void);
-                virtual void v30(void);
-                virtual void v38(void);
-                virtual void v40(void);
-                virtual void v48(void);
-                virtual void v50(void);
-                virtual void v58(void);
-                virtual void v60(void);
-                virtual void v68(void);
-                virtual void v70(void);
-                virtual void v78(void);
-                virtual void v80(void);
-                virtual void v88(void);
-                virtual void v90(void);
-                virtual void v98(void);
-                virtual void v100(void);
-                virtual void GetName(void);
+                virtual void      v0(void)      = 0;
+                virtual void      v8(void)      = 0;
+                virtual void      v10(void)     = 0;
+                virtual void      v18(void)     = 0;
+                virtual void      v20(void)     = 0;
+                virtual void      v28(void)     = 0;
+                virtual void      v30(void)     = 0;
+                virtual void      v38(void)     = 0;
+                virtual void      v40(void)     = 0;
+                virtual void      v48(void)     = 0;
+                virtual void      v50(void)     = 0;
+                virtual void      v58(void)     = 0;
+                virtual void      v60(void)     = 0;
+                virtual void      v68(void)     = 0;
+                virtual void      v70(void)     = 0;
+                virtual void      v78(void)     = 0;
+                virtual void      v80(void)     = 0;
+                virtual void      v88(void)     = 0;
+                virtual void      v90(void)     = 0;
+                virtual void      v98(void)     = 0;
+                virtual void      v100(void)    = 0;
+                virtual FullName *GetName(void) = 0;
             };
 
             struct
@@ -130,11 +129,4 @@ namespace NBA2K22
             };
         };
     };
-
-    auto GetString = (char *(*)(DWORD64 data, DWORD64 key, DWORD64 r8))(NBA2K22 + 0x1E703C0); //搜字符串 GetString8
-    auto GetData   = (Data * (*)(DWORD64 data, DWORD64 key, DWORD64 r8))(NBA2K22 + 0x1E6FB20);
-
-    Insert_t       Insert_6 = (Insert_t)(NBA2K22 + 0x1E74630);
-    Insert_t       Insert_C = (Insert_t)(NBA2K22 + 0x1E72280);
-    Insert_Float_t Insert_D = (Insert_Float_t)(NBA2K22 + 0x1E72DD0);
 } // namespace NBA2K22

@@ -85,7 +85,7 @@ int main()
     Process32First(hProcessSnap, &pe32);
     do
     {
-        if (!strcmp(pe32.szExeFile, "NBA2K22.exe"))
+        if (!stricmp(pe32.szExeFile, "NBA2K22.exe"))
         {
             InjectDLL(pe32.th32ProcessID, path);
         }

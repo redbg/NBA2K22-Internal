@@ -21,6 +21,6 @@ target_link_libraries(NBA2K22 PRIVATE minhook::minhook)
 find_package(unofficial-mongoose CONFIG REQUIRED)
 target_link_libraries(NBA2K22 PRIVATE unofficial::mongoose::mongoose)
 
-# injector.exe
-project(injector)
-add_executable(injector src/injector.cpp)
+# NBA2K22-Internal.exe
+project(NBA2K22-Internal)
+add_executable(NBA2K22-Internal src/injector.cpp)

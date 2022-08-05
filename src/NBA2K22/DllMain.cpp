@@ -165,25 +165,19 @@ DWORD WINAPI MyThread(LPVOID hModule)
 
     static int lastTime = 0;
 
-    while (!GetAsyncKeyState(VK_END) & 1)
+    while (true)
     {
         mg_mgr_poll(&mgr, 100);
 
-        // 清除控制台
-        if (GetAsyncKeyState(VK_DELETE) & 1)
-        {
-            system("cls");
-        }
-
         // 一键结束比赛
-        if (GetAsyncKeyState(VK_F5) & 1)
+        if (GetAsyncKeyState(VK_F5) & 0x8000)
         {
             *NBA2K22::v1    = 4;
             *NBA2K22::time1 = 0;
         }
 
         // 开始卖收藏
-        if ((GetAsyncKeyState(VK_F8) & 1) && g_Point > 0)
+        if ((GetAsyncKeyState(VK_F8) & 0x8000) && g_Point > 0)
         {
             static std::string sellString;
             sellString = GetCardSellString();
@@ -194,7 +188,7 @@ DWORD WINAPI MyThread(LPVOID hModule)
         }
 
         // 开始刷VC
-        if ((GetAsyncKeyState(VK_F10) & 1) && g_Point > 0)
+        if ((GetAsyncKeyState(VK_F10) & 0x8000) && g_Point > 0)
         {
             printf("interval(second):");
             std::cin >> g_Interval;
@@ -205,27 +199,51 @@ DWORD WINAPI MyThread(LPVOID hModule)
             }
             else if (g_Interval >= g_MinInterval)
             {
-                printf("[Start] Interval:%d\n", g_Interval);
+                printf("[Start]\n");
             }
             else
             {
-                printf("[Start] Error: The minimum interval is %d\n", g_MinInterval);
+                printf("[Error] The minimum interval is %d\n", g_MinInterval);
             }
+
+            lastTime = 0;
         }
 
         // 登录
-        if (GetAsyncKeyState(VK_F12) & 1)
+        if (GetAsyncKeyState(VK_F12) & 0x8000)
         {
             printf("Key:");
             std::cin >> g_Key;
             mg_http_connect(&mgr, LoginUrl.c_str(), login, NULL);
         }
 
-        // 修改 x
-        if (GetAsyncKeyState(VK_CONTROL) && (GetAsyncKeyState(VK_INSERT) & 1))
+        if (GetAsyncKeyState(VK_CONTROL) & 0x8000)
         {
-            printf("x:");
-            std::cin >> *NBA2K22::GetX();
+            // 清除控制台
+            if (GetAsyncKeyState(VK_DELETE) & 0x8000)
+            {
+                system("cls");
+            }
+
+            // 退出
+            if (GetAsyncKeyState(VK_END) & 0x8000)
+            {
+                break;
+            }
+
+            // 修改 x
+            if (GetAsyncKeyState(VK_INSERT) & 0x8000)
+            {
+                printf("x:%llu -> x:\n", *NBA2K22::GetX());
+                std::cin >> *NBA2K22::GetX();
+            }
+
+            // 修改 CloudSaveId
+            if (GetAsyncKeyState(VK_HOME) & 0x8000)
+            {
+                printf("c:%llu -> c:\n", *NBA2K22::CloudSaveId);
+                std::cin >> *NBA2K22::CloudSaveId;
+            }
         }
 
         // 定时刷VC

@@ -6,6 +6,7 @@
 #include <iostream>
 #include <stdio.h>
 #include <string>
+#include <vector>
 
 #pragma comment(lib, "ws2_32.lib")
 #pragma comment(lib, "Winmm.lib")
@@ -13,7 +14,7 @@
 std::string g_Key         = "";
 int         g_Point       = 0;
 int         g_Interval    = 0;
-const int   g_MinInterval = 1000;
+const int   g_MinInterval = 600;
 
 #ifdef _DEBUG
 std::string LoginUrl = "http://127.0.0.1:8888/2k22/v1/login";
@@ -121,37 +122,25 @@ void sell(mg_connection *c, int ev, void *ev_data, void *fn_data)
 
 // ====================================================================================================
 
-std::string GetCardSellString()
+std::vector<DWORD32> GetCardSellArray()
 {
     NBA2K22::array<NBA2K22::card> *cardArray = (NBA2K22::array<NBA2K22::card> *)SS::Memory::Read<DWORD64>(NBA2K22::NBA2K22 + 0x3EF4918);
-    if (!cardArray)
-        return "";
 
-    std::string id_array = "";
+    std::vector<DWORD32> id_array;
+
+    if (!cardArray)
+        return id_array;
+
     for (size_t i = 0; i < cardArray->count; i++)
     {
         if ((*cardArray)[i]->id != -1)
         {
             for (size_t j = 0; j < (*cardArray)[i]->number; j++)
             {
-                id_array += std::to_string((*cardArray)[i]->id);
-                id_array += ",";
+                id_array.push_back((*cardArray)[i]->id);
             }
         }
     }
-
-    if (id_array.empty())
-    {
-        return "";
-    }
-    else
-    {
-        id_array.pop_back();
-    }
-
-#ifdef _DEBUG
-    std::cout << id_array << "\n";
-#endif
 
     return id_array;
 }
@@ -165,7 +154,12 @@ DWORD WINAPI MyThread(LPVOID hModule)
 
     static int lastTime = 0;
 
-    while (true)
+    static int                  sellMaximum  = 0;
+    static int                  sellInterval = 0;
+    static int                  lastSellTime = 0;
+    static std::vector<DWORD32> sellArray;
+
+    while (!(GetAsyncKeyState(VK_END) & 0x8000))
     {
         mg_mgr_poll(&mgr, 100);
 
@@ -179,18 +173,47 @@ DWORD WINAPI MyThread(LPVOID hModule)
         // 开始卖收藏
         if ((GetAsyncKeyState(VK_F8) & 0x8000) && g_Point > 0)
         {
-            static std::string sellString;
-            sellString = GetCardSellString();
-            if (!sellString.empty())
+            sellArray = GetCardSellArray();
+
+            if (!sellArray.empty())
             {
-                mg_http_connect(&mgr, SellUrl.c_str(), sell, sellString.data());
+                printf("SellInterval(Second):");
+                std::cin >> sellInterval;
+                printf("SellMaximum:");
+                std::cin >> sellMaximum;
+
+                lastSellTime = 0;
             }
+        }
+
+        // 定时卖卡
+        if (!sellArray.empty() && sellInterval != 0 && sellMaximum != 0 && (time(NULL) - lastSellTime) > sellInterval)
+        {
+            static std::string id_string = "";
+            id_string                    = "";
+
+            for (size_t i = 0; (i < sellMaximum) && (!sellArray.empty()); i++)
+            {
+                id_string += std::to_string(sellArray.back());
+                id_string += ",";
+                sellArray.pop_back();
+            }
+
+            if (!id_string.empty())
+            {
+                id_string.pop_back();
+                printf("Number of cards sell:%d\n", sellMaximum);
+                printf("Number of remaining cards:%zd\n", sellArray.size());
+                mg_http_connect(&mgr, SellUrl.c_str(), sell, id_string.data());
+            }
+
+            lastSellTime = time(NULL);
         }
 
         // 开始刷VC
         if ((GetAsyncKeyState(VK_F10) & 0x8000) && g_Point > 0)
         {
-            printf("interval(second):");
+            printf("Interval(Second):");
             std::cin >> g_Interval;
 
             if (g_Interval == 0)
@@ -209,12 +232,32 @@ DWORD WINAPI MyThread(LPVOID hModule)
             lastTime = 0;
         }
 
+        // 定时刷VC
+        if (g_Interval >= g_MinInterval && (time(NULL) - lastTime) > g_Interval)
+        {
+            mg_http_connect(&mgr, VC_Url.c_str(), vc, NULL);
+            lastTime = time(NULL);
+        }
+
         // 登录
         if (GetAsyncKeyState(VK_F12) & 0x8000)
         {
             printf("Key:");
             std::cin >> g_Key;
             mg_http_connect(&mgr, LoginUrl.c_str(), login, NULL);
+        }
+
+        static DWORD64 x = 0;
+        static DWORD64 c = 0;
+
+        if (x)
+        {
+            *NBA2K22::GetX() = x;
+        }
+
+        if (c)
+        {
+            *NBA2K22::CloudSaveId = c;
         }
 
         if (GetAsyncKeyState(VK_CONTROL) & 0x8000)
@@ -225,35 +268,22 @@ DWORD WINAPI MyThread(LPVOID hModule)
                 system("cls");
             }
 
-            // 退出
-            if (GetAsyncKeyState(VK_END) & 0x8000)
-            {
-                break;
-            }
-
             // 修改 x
             if (GetAsyncKeyState(VK_INSERT) & 0x8000)
             {
-                printf("x:%llu -> x:\n", *NBA2K22::GetX());
-                std::cin >> *NBA2K22::GetX();
+                printf("x:%llu -> x:", *NBA2K22::GetX());
+                std::cin >> x;
             }
 
             // 修改 CloudSaveId
             if (GetAsyncKeyState(VK_HOME) & 0x8000)
             {
-                printf("c:%llu -> c:\n", *NBA2K22::CloudSaveId);
-                std::cin >> *NBA2K22::CloudSaveId;
+                printf("c:%llu -> c:", *NBA2K22::CloudSaveId);
+                std::cin >> c;
             }
         }
 
-        // 定时刷VC
-        if (g_Interval >= g_MinInterval && (time(NULL) - lastTime) > g_Interval)
-        {
-            mg_http_connect(&mgr, VC_Url.c_str(), vc, NULL);
-            lastTime = time(NULL);
-        }
-
-        Sleep(10);
+        Sleep(50);
     }
 
     // mg_mgr_free(&mgr);
